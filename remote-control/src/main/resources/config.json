@@ -1,0 +1,15 @@
+{
+  "password": "test",
+  "use_wss": true,
+  "use_heartbeat": false,
+  "config": {
+    "amount": "4",
+    "defaultAddress": "LOCAL:5000",
+    "bindAddresses": [
+      "LOCAL:5000",
+      "LOCAL:5001",
+      "127.0.0.1:5002",
+      "localhost:5003"
+    ]
+  }
+}
