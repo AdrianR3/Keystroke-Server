@@ -25,3 +25,4 @@ hs_err_pid*
 # Maven output
 remote-control/target/**
 
+*/resources/keystore.jks
