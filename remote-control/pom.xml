@@ -25,6 +25,11 @@
             <version>2.9.0</version>
             <scope>import</scope>
         </dependency>
+        <dependency>
+            <groupId>org.codeartisans</groupId>
+            <artifactId>org.json</artifactId>
+            <version>20161124</version>
+        </dependency>
     </dependencies>
 
 </project>
