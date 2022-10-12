@@ -4,6 +4,7 @@ import me.awesome.server.Messages;
 import me.awesome.server.SSLSocket;
 import me.awesome.server.utils.Colors;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.net.*;
 import java.nio.file.Files;
@@ -18,6 +19,7 @@ public class Start {
     static HashMap<String, Object> configMap = new HashMap<>();
 
     static String password = "";
+    static String storePassword = "";
     public static boolean useWss = true;
     public static boolean useHeartbeat = true;
     static int amount = 3;
@@ -55,6 +57,7 @@ public class Start {
 
                 switch (index) {
                     case "password" -> password = element.toString();
+                    case "storePassword" -> storePassword = element.toString();
                     case "use_wss" -> useWss = Boolean.parseBoolean(element.toString());
                     case "use_heartbeat" -> useHeartbeat = Boolean.parseBoolean(element.toString());
                     case "config" -> ((LinkedTreeMap<?, ?>) element).forEach((configIndex, configElement) -> {
@@ -179,13 +182,20 @@ public class Start {
 
         for (InetSocketAddress socketAddress : addressArrayList) {
 //            System.out.println("Bind Server: " + socketAddress.getAddress().getHostAddress()+":"+socketAddress.getPort());
+
             new Thread(() -> {
                 try {
-                    socketHashMap.add(new SSLSocket(socketAddress, useWss, useHeartbeat, password));
+                    socketHashMap.add(new SSLSocket(socketAddress, useWss, useHeartbeat, password, storePassword));
+                    Thread.currentThread().setName(String.valueOf(socketHashMap.size()));
                 } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    if (e instanceof IOException) {
+                        e.printStackTrace();
+                    } else {
+                        throw new RuntimeException(e);
+                    }
                 }
-            }, String.valueOf(socketHashMap.size())).start();
+            }).start();
+
         }
 
     }

@@ -5,9 +5,13 @@ import org.java_websocket.server.DefaultSSLWebSocketServerFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 
 public class SSLSocket {
 
@@ -21,19 +25,26 @@ public class SSLSocket {
     public static boolean useWss;
     public static boolean useHeartbeat;
 
-    public SSLSocket(InetSocketAddress address, boolean useWss, boolean useHeartbeat, String password) throws Exception {
+    public SSLSocket(InetSocketAddress address, boolean useWss, boolean useHeartbeat, String password, String storePassword) throws Exception {
         SSLSocket.useHeartbeat = useHeartbeat;
         SSLSocket.password = password;
         SSLSocket.useWss = useWss;
+
         Chat gameServer = new Chat(address);
         // Firefox does allow multiple ssl connection only via port 443 //tested on FF16
 //        old port: 8887
 
 //                SSLUtility.getSSLContext(String.valueOf(System.console().readPassword("Enter certificate password: ")), getClass().getResourceAsStream("/keystore.jks"))
         if (useWss) {
-            gameServer.setWebSocketFactory(new DefaultSSLWebSocketServerFactory(
-                    SSLUtility.getSSLContext("storepassword", getClass().getResourceAsStream("/keystore.jks"))
-            ));
+            try {
+                gameServer.setWebSocketFactory(new DefaultSSLWebSocketServerFactory(
+                        SSLUtility.getSSLContext("".equals(storePassword) ? (System.console() != null ? String.valueOf(System.console().readPassword("Enter certificate password: ")) : null) : storePassword, getClass().getResourceAsStream("/keystore.jks"))
+                ));
+            } catch (java.lang.IllegalArgumentException e) {
+                System.err.println("IllegalArgumentException: Shutting down this thread");
+                Thread.currentThread().interrupt();
+                return;
+            }
         }
         gameServer.setReuseAddr(true);
         gameServer.setTcpNoDelay(true);
@@ -51,10 +62,19 @@ public class SSLSocket {
             String STORETYPE = "JKS";
 
             KeyStore ks = KeyStore.getInstance(STORETYPE);
-            ks.load(keyStream, storePassword.toCharArray());
-
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, storePassword.toCharArray());
+            try {
+                ks.load(keyStream, storePassword.toCharArray());
+                kmf.init(ks, storePassword.toCharArray());
+            } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
+                throw new RuntimeException(e);
+            } catch (NullPointerException e) {
+                System.err.println("NullPointerException: This is fatal. \nCrashing by using invalid password...");
+                return getSSLContext(storePassword == null ? "null" : storePassword, keyPassword == null ? "null" : keyPassword, keyStream);
+            } catch (IOException e) {
+//                e.printStackTrace();
+                return null;
+            }
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
             tmf.init(ks);
 

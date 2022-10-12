@@ -1,5 +1,6 @@
 {
   "password": "test",
+  "storePassword": "storepassword",
   "use_wss": true,
   "use_heartbeat": false,
   "config": {
